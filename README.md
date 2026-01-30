@@ -6,15 +6,22 @@ Watch your terminal processes swim around like creatures in an idle game. Idle R
 
 ![Idle Realm](https://img.shields.io/badge/status-active-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 
+<p align="center">
+  <img src="screenshots/idle-realm-main.png" alt="Idle Realm - Main View" width="270"/>
+  <img src="screenshots/idle-realm-menu.png" alt="Idle Realm - Context Menu" width="270"/>
+</p>
+
 ## Features
 
 - **Real-time visualization** of tmux sessions, panes, and Docker containers
 - **Distinct sprite types**: Wizards (tmux sessions), Familiars (panes), Containers (Docker)
 - **Click-to-interact**: View logs, kill processes, see detailed stats
+- **The Reaper**: Dramatic villain animation when killing processes
 - **Health monitoring**: Visual indicators for container health status
-- **Stale detection**: Frozen animation for inactive/stopped processes
+- **Stale detection**: Frozen animation with ice crystals for inactive processes
 - **Connection lines**: See relationships between sessions and panes
-- **Ambient soundtrack**: Procedural synth music (toggle on/off)
+- **4 Zelda-inspired soundtracks**: Jabu-Jabu, Lost Woods, Temple of Time, Fairy Fountain
+- **Full audio control**: Toggle music, switch tracks, or mute all sounds
 - **Sound effects**: Audio cues for spawns, kills, errors, and state changes
 - **Vertical layout**: Optimized for portrait/fishtank monitor orientation
 
@@ -48,6 +55,8 @@ open http://localhost:3000
 | Action | Effect |
 |--------|--------|
 | Click sprite | Open context menu |
+| Click track name | Cycle through soundtracks |
+| Click `)))` button | Mute/unmute all audio |
 | Click ♪ button | Toggle ambient music |
 | Click outside menu | Close menu |
 
