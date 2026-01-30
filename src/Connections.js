@@ -10,10 +10,18 @@ export class Connections {
     this.particles = [];
   }
 
-  update(agents, deltaTime) {
+  update(agents, deltaTime, villain = null) {
     this.graphics.clear();
 
     const agentArray = Array.from(agents.values());
+
+    // Draw villain attack line if active
+    if (villain) {
+      const attackLine = villain.getAttackLine();
+      if (attackLine) {
+        this.drawVillainAttack(attackLine);
+      }
+    }
 
     // Draw parent-child connections (tmux session -> panes)
     for (const agent of agentArray) {
@@ -106,6 +114,59 @@ export class Connections {
 
     this.graphics.circle(midX, midY, 3 + pulse * 2);
     this.graphics.fill({ color: 0xffffff, alpha: 0.3 + pulse * 0.3 });
+  }
+
+  drawVillainAttack(attackLine) {
+    const { from, to, intensity } = attackLine;
+
+    // Main attack beam
+    const time = Date.now() * 0.02;
+
+    // Pulsing red line
+    this.graphics.moveTo(from.x, from.y);
+    this.graphics.lineTo(to.x, to.y);
+    this.graphics.stroke({
+      width: 3 + intensity * 3,
+      color: 0xff0044,
+      alpha: 0.6 + intensity * 0.4
+    });
+
+    // Inner bright line
+    this.graphics.moveTo(from.x, from.y);
+    this.graphics.lineTo(to.x, to.y);
+    this.graphics.stroke({
+      width: 1 + intensity,
+      color: 0xff6688,
+      alpha: 0.8
+    });
+
+    // Sparks along the line
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const numSparks = Math.floor(dist / 15);
+
+    for (let i = 0; i <= numSparks; i++) {
+      const t = i / numSparks;
+      const x = from.x + dx * t;
+      const y = from.y + dy * t;
+      const offset = Math.sin(time + i * 2) * 5;
+      const perpX = -dy / dist * offset;
+      const perpY = dx / dist * offset;
+
+      this.graphics.circle(x + perpX, y + perpY, 2 + Math.sin(time + i) * 1);
+      this.graphics.fill({ color: 0xffaa00, alpha: 0.7 + Math.sin(time + i * 3) * 0.3 });
+    }
+
+    // Spawn particles along attack line
+    if (Math.random() < 0.3) {
+      const t = Math.random();
+      this.spawnParticle(
+        from.x + dx * t + (Math.random() - 0.5) * 20,
+        from.y + dy * t + (Math.random() - 0.5) * 20,
+        0xff0044
+      );
+    }
   }
 
   spawnParticle(x, y, color) {

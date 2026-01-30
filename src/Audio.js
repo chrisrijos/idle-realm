@@ -1,17 +1,46 @@
-// Ambient procedural soundtrack using Web Audio API
+// Zelda-inspired procedural soundtrack using Web Audio API
 export class AudioManager {
   constructor() {
     this.ctx = null;
     this.masterGain = null;
     this.isPlaying = false;
+    this.isMuted = false;
     this.nodes = [];
+    this.currentTrack = 0;
+    this.trackNames = ['Jabu-Jabu', 'Lost Woods', 'Temple of Time', 'Fairy Fountain'];
+    this.volumeBeforeMute = 0.3;
   }
 
   async init() {
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.3;
+    this.masterGain.gain.value = this.isMuted ? 0 : 0.3;
     this.masterGain.connect(this.ctx.destination);
+  }
+
+  mute() {
+    this.isMuted = true;
+    if (this.masterGain) {
+      this.volumeBeforeMute = this.masterGain.gain.value || 0.3;
+      this.masterGain.gain.value = 0;
+    }
+    return true;
+  }
+
+  unmute() {
+    this.isMuted = false;
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.volumeBeforeMute;
+    }
+    return false;
+  }
+
+  toggleMute() {
+    if (this.isMuted) {
+      return this.unmute();
+    } else {
+      return this.mute();
+    }
   }
 
   async start() {
@@ -23,9 +52,7 @@ export class AudioManager {
     if (this.isPlaying) return;
     this.isPlaying = true;
 
-    this.playAmbientDrone();
-    this.playArpeggio();
-    this.playPad();
+    this.playTrack(this.currentTrack);
   }
 
   stop() {
@@ -45,27 +72,46 @@ export class AudioManager {
     return this.isPlaying;
   }
 
-  // === JABU-JABU'S BELLY INSPIRED SOUNDTRACK ===
+  nextTrack() {
+    this.currentTrack = (this.currentTrack + 1) % this.trackNames.length;
+    if (this.isPlaying) {
+      this.stop();
+      this.isPlaying = true;
+      this.playTrack(this.currentTrack);
+    }
+    return this.trackNames[this.currentTrack];
+  }
 
-  // Deep organic bass pulse (like inside a whale)
-  playAmbientDrone() {
+  getTrackName() {
+    return this.trackNames[this.currentTrack];
+  }
+
+  playTrack(index) {
+    switch (index) {
+      case 0: this.playJabuJabu(); break;
+      case 1: this.playLostWoods(); break;
+      case 2: this.playTempleOfTime(); break;
+      case 3: this.playFairyFountain(); break;
+    }
+  }
+
+  // === TRACK 1: JABU-JABU'S BELLY ===
+  playJabuJabu() {
     if (!this.isPlaying) return;
 
-    // Deep heartbeat-like pulse
+    // Heartbeat
     const playHeartbeat = () => {
-      if (!this.isPlaying) return;
+      if (!this.isPlaying || this.currentTrack !== 0) return;
 
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
 
       osc.type = 'sine';
-      osc.frequency.value = 40; // Very deep
-
+      osc.frequency.value = 40;
       filter.type = 'lowpass';
       filter.frequency.value = 80;
 
-      // Heartbeat envelope: thump-thump
       gain.gain.setValueAtTime(0, this.ctx.currentTime);
       gain.gain.linearRampToValueAtTime(0.25, this.ctx.currentTime + 0.08);
       gain.gain.exponentialRampToValueAtTime(0.05, this.ctx.currentTime + 0.3);
@@ -75,246 +121,329 @@ export class AudioManager {
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
-
       osc.start();
       osc.stop(this.ctx.currentTime + 1);
 
-      // Irregular heartbeat timing (1.5-2.5 seconds)
       setTimeout(playHeartbeat, 1500 + Math.random() * 1000);
     };
 
-    // Underwater rumble drone
-    const rumble = this.ctx.createOscillator();
-    const rumbleGain = this.ctx.createGain();
-    const rumbleFilter = this.ctx.createBiquadFilter();
-
-    rumble.type = 'sawtooth';
-    rumble.frequency.value = 30;
-
-    rumbleFilter.type = 'lowpass';
-    rumbleFilter.frequency.value = 60;
-    rumbleFilter.Q.value = 2;
-
-    rumbleGain.gain.value = 0.08;
-
-    // Slow modulation
-    const lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
-    lfo.frequency.value = 0.15;
-    lfoGain.gain.value = 8;
-    lfo.connect(lfoGain);
-    lfoGain.connect(rumble.frequency);
-
-    rumble.connect(rumbleFilter);
-    rumbleFilter.connect(rumbleGain);
-    rumbleGain.connect(this.masterGain);
-
-    rumble.start();
-    lfo.start();
-    this.nodes.push(rumble, lfo);
-
-    setTimeout(playHeartbeat, 500);
-  }
-
-  // Bubble sounds (random watery blips)
-  playArpeggio() {
-    if (!this.isPlaying) return;
-
+    // Bubbles
     const playBubble = () => {
-      if (!this.isPlaying) return;
+      if (!this.isPlaying || this.currentTrack !== 0) return;
 
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      const filter = this.ctx.createBiquadFilter();
 
-      // Random bubble pitch
-      const baseFreq = 400 + Math.random() * 800;
+      const freq = 400 + Math.random() * 800;
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, this.ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + 0.1);
 
-      filter.type = 'bandpass';
-      filter.frequency.value = baseFreq;
-      filter.Q.value = 10;
-
-      // Quick pop envelope
-      gain.gain.setValueAtTime(0, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.06, this.ctx.currentTime + 0.02);
+      gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
 
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.2);
+
+      setTimeout(playBubble, 300 + Math.random() * 1700);
+    };
+
+    // Deep drone
+    const drone = this.ctx.createOscillator();
+    const droneGain = this.ctx.createGain();
+    const droneFilter = this.ctx.createBiquadFilter();
+
+    drone.type = 'sawtooth';
+    drone.frequency.value = 30;
+    droneFilter.type = 'lowpass';
+    droneFilter.frequency.value = 60;
+    droneGain.gain.value = 0.08;
+
+    drone.connect(droneFilter);
+    droneFilter.connect(droneGain);
+    droneGain.connect(this.masterGain);
+    drone.start();
+    this.nodes.push(drone);
+
+    setTimeout(playHeartbeat, 500);
+    setTimeout(playBubble, 1000);
+  }
+
+  // === TRACK 2: LOST WOODS ===
+  playLostWoods() {
+    if (!this.isPlaying) return;
+
+    // Saria's Song inspired melody pattern: F A B, F A B, F A B E D
+    const melody = [349.23, 440, 493.88, 349.23, 440, 493.88, 349.23, 440, 493.88, 329.63, 293.66];
+    const durations = [0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25, 0.25, 0.25, 0.25, 0.75];
+    let noteIndex = 0;
+
+    const playMelodyNote = () => {
+      if (!this.isPlaying || this.currentTrack !== 1) return;
+
+      const osc = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      const freq = melody[noteIndex];
+      const dur = durations[noteIndex];
+
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      osc2.type = 'triangle';
+      osc2.frequency.value = freq;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 1500;
+
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur * 0.9);
+
       osc.connect(filter);
+      osc2.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
 
       osc.start();
+      osc2.start();
+      osc.stop(this.ctx.currentTime + dur);
+      osc2.stop(this.ctx.currentTime + dur);
+
+      noteIndex = (noteIndex + 1) % melody.length;
+
+      // Add pause after full phrase
+      const nextDelay = noteIndex === 0 ? 1500 : dur * 1000;
+      setTimeout(playMelodyNote, nextDelay);
+    };
+
+    // Forest ambience - bird chirps
+    const playBirdChirp = () => {
+      if (!this.isPlaying || this.currentTrack !== 1) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      const baseFreq = 1500 + Math.random() * 1000;
+      osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(baseFreq * 1.2, this.ctx.currentTime + 0.05);
+      osc.frequency.setValueAtTime(baseFreq * 0.9, this.ctx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
       osc.stop(this.ctx.currentTime + 0.2);
 
-      // Random bubble timing (0.3-2 seconds)
-      setTimeout(playBubble, 300 + Math.random() * 1700);
+      setTimeout(playBirdChirp, 2000 + Math.random() * 4000);
     };
 
-    // Occasional bubble cluster
-    const playBubbleCluster = () => {
-      if (!this.isPlaying) return;
+    // Bass drone in F
+    const bass = this.ctx.createOscillator();
+    const bassGain = this.ctx.createGain();
+    bass.type = 'triangle';
+    bass.frequency.value = 87.31; // F2
+    bassGain.gain.value = 0.1;
+    bass.connect(bassGain);
+    bassGain.connect(this.masterGain);
+    bass.start();
+    this.nodes.push(bass);
 
-      const count = 3 + Math.floor(Math.random() * 5);
-      for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-          if (!this.isPlaying) return;
-
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-
-          osc.type = 'sine';
-          const freq = 600 + Math.random() * 600;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(freq * 1.3, this.ctx.currentTime + 0.08);
-
-          gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
-
-          osc.connect(gain);
-          gain.connect(this.masterGain);
-
-          osc.start();
-          osc.stop(this.ctx.currentTime + 0.15);
-        }, i * (50 + Math.random() * 80));
-      }
-
-      setTimeout(playBubbleCluster, 4000 + Math.random() * 6000);
-    };
-
-    setTimeout(playBubble, 1000);
-    setTimeout(playBubbleCluster, 3000);
+    setTimeout(playMelodyNote, 500);
+    setTimeout(playBirdChirp, 2000);
   }
 
-  // Eerie organic pad (like whale song / Jabu-Jabu ambience)
-  playPad() {
+  // === TRACK 3: TEMPLE OF TIME ===
+  playTempleOfTime() {
     if (!this.isPlaying) return;
 
-    // Zelda-style mysterious minor chords
+    // Slow, reverential chords
     const chords = [
-      [73.42, 87.31, 110.00, 146.83],   // D minor (deep)
-      [82.41, 98.00, 123.47, 164.81],   // E minor
-      [65.41, 77.78, 98.00, 130.81],    // C minor
-      [69.30, 82.41, 103.83, 138.59],   // C# minor (eerie)
+      [130.81, 164.81, 196.00], // C major
+      [146.83, 174.61, 220.00], // D minor
+      [164.81, 196.00, 246.94], // E minor
+      [174.61, 220.00, 261.63], // F major
     ];
+    let chordIndex = 0;
 
-    const playWhaleSong = () => {
-      if (!this.isPlaying) return;
+    const playChord = () => {
+      if (!this.isPlaying || this.currentTrack !== 2) return;
 
-      const chord = chords[Math.floor(Math.random() * chords.length)];
+      const chord = chords[chordIndex];
 
       chord.forEach((freq, i) => {
         const osc = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
 
-        // Slightly detuned for organic feel
         osc.type = 'sine';
         osc.frequency.value = freq;
 
-        osc2.type = 'triangle';
-        osc2.frequency.value = freq * 1.002; // Slight detune
-
         filter.type = 'lowpass';
-        filter.frequency.value = 300;
+        filter.frequency.value = 500;
 
-        // Slow swell
-        const startTime = this.ctx.currentTime + i * 0.3;
+        const startTime = this.ctx.currentTime + i * 0.1;
         gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.08, startTime + 1);
         gain.gain.linearRampToValueAtTime(0.06, startTime + 3);
-        gain.gain.linearRampToValueAtTime(0.05, startTime + 6);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 10);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 5);
 
         osc.connect(filter);
-        osc2.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(startTime);
-        osc2.start(startTime);
-        osc.stop(startTime + 10);
-        osc2.stop(startTime + 10);
+        osc.stop(startTime + 5);
       });
 
-      // Occasional high ethereal tone (like distant whale call)
-      if (Math.random() < 0.4) {
-        setTimeout(() => {
-          if (!this.isPlaying) return;
-
-          const whaleCall = this.ctx.createOscillator();
-          const whaleGain = this.ctx.createGain();
-          const whaleFilter = this.ctx.createBiquadFilter();
-
-          whaleCall.type = 'sine';
-          const startFreq = 300 + Math.random() * 200;
-          whaleCall.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
-          whaleCall.frequency.linearRampToValueAtTime(startFreq * 0.7, this.ctx.currentTime + 2);
-          whaleCall.frequency.linearRampToValueAtTime(startFreq * 0.9, this.ctx.currentTime + 3);
-
-          whaleFilter.type = 'lowpass';
-          whaleFilter.frequency.value = 600;
-
-          whaleGain.gain.setValueAtTime(0, this.ctx.currentTime);
-          whaleGain.gain.linearRampToValueAtTime(0.08, this.ctx.currentTime + 0.5);
-          whaleGain.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 2);
-          whaleGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 3.5);
-
-          whaleCall.connect(whaleFilter);
-          whaleFilter.connect(whaleGain);
-          whaleGain.connect(this.masterGain);
-
-          whaleCall.start();
-          whaleCall.stop(this.ctx.currentTime + 4);
-        }, 2000 + Math.random() * 3000);
-      }
-
-      setTimeout(playWhaleSong, 8000 + Math.random() * 6000);
+      chordIndex = (chordIndex + 1) % chords.length;
+      setTimeout(playChord, 4000);
     };
 
-    // Mysterious glassy tones (like Zelda puzzle hints)
-    const playMysteryTone = () => {
-      if (!this.isPlaying) return;
+    // Bell tones
+    const playBell = () => {
+      if (!this.isPlaying || this.currentTrack !== 2) return;
 
-      const notes = [329.63, 392.00, 440.00, 493.88, 523.25]; // E4, G4, A4, B4, C5
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
       const note = notes[Math.floor(Math.random() * notes.length)];
 
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      const delay = this.ctx.createDelay();
-      const delayGain = this.ctx.createGain();
 
       osc.type = 'sine';
       osc.frequency.value = note;
 
-      // Reverb-like delay
-      delay.delayTime.value = 0.3;
-      delayGain.gain.value = 0.3;
-
-      gain.gain.setValueAtTime(0.07, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.5);
+      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 3);
 
       osc.connect(gain);
       gain.connect(this.masterGain);
-      gain.connect(delay);
-      delay.connect(delayGain);
-      delayGain.connect(this.masterGain);
-
       osc.start();
-      osc.stop(this.ctx.currentTime + 1.5);
+      osc.stop(this.ctx.currentTime + 3);
 
-      setTimeout(playMysteryTone, 5000 + Math.random() * 10000);
+      setTimeout(playBell, 3000 + Math.random() * 4000);
     };
 
-    setTimeout(playWhaleSong, 1000);
-    setTimeout(playMysteryTone, 4000);
+    // Deep reverb drone
+    const drone = this.ctx.createOscillator();
+    const droneGain = this.ctx.createGain();
+    drone.type = 'sine';
+    drone.frequency.value = 65.41; // C2
+    droneGain.gain.value = 0.12;
+    drone.connect(droneGain);
+    droneGain.connect(this.masterGain);
+    drone.start();
+    this.nodes.push(drone);
+
+    setTimeout(playChord, 500);
+    setTimeout(playBell, 2000);
+  }
+
+  // === TRACK 4: FAIRY FOUNTAIN ===
+  playFairyFountain() {
+    if (!this.isPlaying) return;
+
+    // Iconic arpeggio pattern
+    const arpNotes = [
+      261.63, 329.63, 392.00, 523.25, 659.25, 783.99,
+      659.25, 523.25, 392.00, 329.63
+    ];
+    let arpIndex = 0;
+
+    const playArp = () => {
+      if (!this.isPlaying || this.currentTrack !== 3) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.value = arpNotes[arpIndex];
+
+      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.02, this.ctx.currentTime + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.8);
+
+      arpIndex = (arpIndex + 1) % arpNotes.length;
+
+      const nextDelay = arpIndex === 0 ? 400 : 150;
+      setTimeout(playArp, nextDelay);
+    };
+
+    // Sparkle sounds
+    const playSparkle = () => {
+      if (!this.isPlaying || this.currentTrack !== 3) return;
+
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.value = 2000 + Math.random() * 2000;
+
+          gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.1);
+        }, i * 50);
+      }
+
+      setTimeout(playSparkle, 1500 + Math.random() * 2000);
+    };
+
+    // Pad chord
+    const playPad = () => {
+      if (!this.isPlaying || this.currentTrack !== 3) return;
+
+      const chords = [
+        [261.63, 329.63, 392.00], // C
+        [293.66, 369.99, 440.00], // D
+        [329.63, 415.30, 493.88], // E
+        [349.23, 440.00, 523.25], // F
+      ];
+      const chord = chords[Math.floor(Math.random() * chords.length)];
+
+      chord.forEach(freq => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.value = freq / 2;
+
+        gain.gain.setValueAtTime(0, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.05, this.ctx.currentTime + 1);
+        gain.gain.linearRampToValueAtTime(0.03, this.ctx.currentTime + 4);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 6);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 6);
+      });
+
+      setTimeout(playPad, 5000 + Math.random() * 3000);
+    };
+
+    setTimeout(playArp, 100);
+    setTimeout(playSparkle, 1000);
+    setTimeout(playPad, 500);
   }
 
   // === EVENT SOUNDS ===
 
-  // Process spawned
   playSpawn() {
     if (!this.ctx) return;
     this.ensureContext();
@@ -332,39 +461,67 @@ export class AudioManager {
 
     osc.connect(gain);
     gain.connect(this.masterGain);
-
     osc.start();
     osc.stop(this.ctx.currentTime + 0.3);
   }
 
-  // Process killed/stopped
   playKill() {
     if (!this.ctx) return;
     this.ensureContext();
 
+    // Dramatic death sound
     const osc = this.ctx.createOscillator();
+    const osc2 = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.5);
+    osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.8);
 
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(200, this.ctx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.8);
+
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.8);
 
     osc.connect(gain);
+    osc2.connect(gain);
     gain.connect(this.masterGain);
 
     osc.start();
-    osc.stop(this.ctx.currentTime + 0.5);
+    osc2.start();
+    osc.stop(this.ctx.currentTime + 0.8);
+    osc2.stop(this.ctx.currentTime + 0.8);
   }
 
-  // Docker container started
+  playVillainAppear() {
+    if (!this.ctx) return;
+    this.ensureContext();
+
+    // Ominous appearance
+    [0, 0.1, 0.2].forEach((delay, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.value = 80 + i * 20;
+
+      gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
+      gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + delay + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + 0.3);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(this.ctx.currentTime + delay);
+      osc.stop(this.ctx.currentTime + delay + 0.3);
+    });
+  }
+
   playContainerStart() {
     if (!this.ctx) return;
     this.ensureContext();
 
-    // Rising tone sequence
     [0, 0.1, 0.2].forEach((delay, i) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -378,18 +535,15 @@ export class AudioManager {
 
       osc.connect(gain);
       gain.connect(this.masterGain);
-
       osc.start(this.ctx.currentTime + delay);
       osc.stop(this.ctx.currentTime + delay + 0.15);
     });
   }
 
-  // Docker container stopped
   playContainerStop() {
     if (!this.ctx) return;
     this.ensureContext();
 
-    // Falling tone sequence
     [0, 0.1, 0.2].forEach((delay, i) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -403,13 +557,11 @@ export class AudioManager {
 
       osc.connect(gain);
       gain.connect(this.masterGain);
-
       osc.start(this.ctx.currentTime + delay);
       osc.stop(this.ctx.currentTime + delay + 0.15);
     });
   }
 
-  // Error occurred
   playError() {
     if (!this.ctx) return;
     this.ensureContext();
@@ -418,12 +570,10 @@ export class AudioManager {
     const osc2 = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
-    // Dissonant chord
     osc.type = 'sawtooth';
     osc.frequency.value = 150;
-
     osc2.type = 'sawtooth';
-    osc2.frequency.value = 158; // Slightly detuned for dissonance
+    osc2.frequency.value = 158;
 
     gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
     gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.1);
@@ -439,7 +589,6 @@ export class AudioManager {
     osc2.stop(this.ctx.currentTime + 0.6);
   }
 
-  // Health check passed
   playHealthy() {
     if (!this.ctx) return;
     this.ensureContext();
@@ -448,20 +597,18 @@ export class AudioManager {
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
-    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.1); // E5
+    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.1);
 
     gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
-
     osc.start();
     osc.stop(this.ctx.currentTime + 0.25);
   }
 
-  // Health check failed
   playUnhealthy() {
     if (!this.ctx) return;
     this.ensureContext();
@@ -478,12 +625,10 @@ export class AudioManager {
 
     osc.connect(gain);
     gain.connect(this.masterGain);
-
     osc.start();
     osc.stop(this.ctx.currentTime + 0.4);
   }
 
-  // Stale/frozen process
   playFrozen() {
     if (!this.ctx) return;
     this.ensureContext();
@@ -494,7 +639,6 @@ export class AudioManager {
 
     osc.type = 'sine';
     osc.frequency.value = 800;
-
     filter.type = 'highpass';
     filter.frequency.value = 600;
 
@@ -504,7 +648,6 @@ export class AudioManager {
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(this.masterGain);
-
     osc.start();
     osc.stop(this.ctx.currentTime + 0.8);
   }

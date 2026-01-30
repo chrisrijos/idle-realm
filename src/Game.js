@@ -5,6 +5,7 @@ import { Dialog } from './Dialog.js';
 import { Connections } from './Connections.js';
 import { ContextMenu } from './ContextMenu.js';
 import { AudioManager } from './Audio.js';
+import { Villain } from './Villain.js';
 
 export class Game {
   constructor(app) {
@@ -16,6 +17,8 @@ export class Game {
     this.connections = null;
     this.contextMenu = null;
     this.audio = new AudioManager();
+    this.villain = null;
+    this.pendingKill = null;
   }
 
   async init() {
@@ -30,6 +33,10 @@ export class Game {
     // Create agent container
     this.agentContainer = new Container();
     this.app.stage.addChild(this.agentContainer);
+
+    // Create villain (appears when killing processes)
+    this.villain = new Villain(this.app.screen.width, this.app.screen.height);
+    this.app.stage.addChild(this.villain.container);
 
     // Create dialog system
     this.dialogSystem = new Dialog();
@@ -58,39 +65,131 @@ export class Game {
   }
 
   createAudioButton() {
-    const btn = new Container();
-    btn.x = this.app.screen.width - 40;
-    btn.y = 10;
-    btn.eventMode = 'static';
-    btn.cursor = 'pointer';
+    // Music toggle button
+    const musicBtn = new Container();
+    musicBtn.x = this.app.screen.width - 40;
+    musicBtn.y = 10;
+    musicBtn.eventMode = 'static';
+    musicBtn.cursor = 'pointer';
 
-    const bg = new Graphics();
-    bg.roundRect(0, 0, 30, 24, 4);
-    bg.fill({ color: 0x2a4a3a, alpha: 0.8 });
-    btn.addChild(bg);
+    const musicBg = new Graphics();
+    musicBg.roundRect(0, 0, 30, 24, 4);
+    musicBg.fill({ color: 0x2a4a3a, alpha: 0.8 });
+    musicBtn.addChild(musicBg);
 
-    const style = new TextStyle({
+    const musicStyle = new TextStyle({
       fontFamily: 'Courier New',
       fontSize: 14,
       fill: '#88aa88'
     });
-    this.audioIcon = new Text({ text: '♪', style });
+    this.audioIcon = new Text({ text: '♪', style: musicStyle });
     this.audioIcon.x = 8;
     this.audioIcon.y = 3;
-    btn.addChild(this.audioIcon);
+    musicBtn.addChild(this.audioIcon);
 
-    btn.on('pointerdown', async () => {
+    musicBtn.on('pointerdown', async () => {
       const playing = await this.audio.toggle();
-      this.audioIcon.style.fill = playing ? '#aaffaa' : '#88aa88';
-      this.audioIcon.text = playing ? '♫' : '♪';
+      this.updateAudioUI();
     });
 
-    this.app.stage.addChild(btn);
+    // Mute button (mutes all sound including effects)
+    const muteBtn = new Container();
+    muteBtn.x = this.app.screen.width - 75;
+    muteBtn.y = 10;
+    muteBtn.eventMode = 'static';
+    muteBtn.cursor = 'pointer';
+
+    const muteBg = new Graphics();
+    muteBg.roundRect(0, 0, 30, 24, 4);
+    muteBg.fill({ color: 0x2a4a3a, alpha: 0.8 });
+    muteBtn.addChild(muteBg);
+    this.muteBg = muteBg;
+
+    const muteStyle = new TextStyle({
+      fontFamily: 'Courier New',
+      fontSize: 12,
+      fill: '#88aa88'
+    });
+    this.muteIcon = new Text({ text: ')))' , style: muteStyle });
+    this.muteIcon.x = 4;
+    this.muteIcon.y = 5;
+    muteBtn.addChild(this.muteIcon);
+
+    muteBtn.on('pointerdown', () => {
+      this.audio.toggleMute();
+      this.updateAudioUI();
+    });
+
+    // Track name display (click to change track)
+    const trackBtn = new Container();
+    trackBtn.x = this.app.screen.width - 145;
+    trackBtn.y = 10;
+    trackBtn.eventMode = 'static';
+    trackBtn.cursor = 'pointer';
+
+    const trackBg = new Graphics();
+    trackBg.roundRect(0, 0, 65, 24, 4);
+    trackBg.fill({ color: 0x2a4a3a, alpha: 0.8 });
+    trackBtn.addChild(trackBg);
+
+    const trackStyle = new TextStyle({
+      fontFamily: 'Courier New',
+      fontSize: 9,
+      fill: '#6a8a6a'
+    });
+    this.trackLabel = new Text({ text: 'Jabu-Jabu', style: trackStyle });
+    this.trackLabel.x = 4;
+    this.trackLabel.y = 7;
+    trackBtn.addChild(this.trackLabel);
+
+    trackBtn.on('pointerdown', () => {
+      const trackName = this.audio.nextTrack();
+      this.trackLabel.text = trackName;
+    });
+
+    this.app.stage.addChild(trackBtn);
+    this.app.stage.addChild(muteBtn);
+    this.app.stage.addChild(musicBtn);
+  }
+
+  updateAudioUI() {
+    // Update music icon
+    this.audioIcon.style.fill = this.audio.isPlaying ? '#aaffaa' : '#88aa88';
+    this.audioIcon.text = this.audio.isPlaying ? '♫' : '♪';
+
+    // Update mute icon
+    if (this.audio.isMuted) {
+      this.muteIcon.text = ')))';
+      this.muteIcon.style.fill = '#ff6666';
+      // Strike-through effect
+      this.muteBg.clear();
+      this.muteBg.roundRect(0, 0, 30, 24, 4);
+      this.muteBg.fill({ color: 0x4a2a2a, alpha: 0.8 });
+    } else {
+      this.muteIcon.text = ')))';
+      this.muteIcon.style.fill = '#88aa88';
+      this.muteBg.clear();
+      this.muteBg.roundRect(0, 0, 30, 24, 4);
+      this.muteBg.fill({ color: 0x2a4a3a, alpha: 0.8 });
+    }
+
+    // Update track name
+    this.trackLabel.text = this.audio.getTrackName();
   }
 
   handleMenuAction(action, agent) {
     if (action === 'kill') {
-      this.audio.playKill();
+      // Store the pending kill and send the villain
+      this.pendingKill = agent;
+      this.audio.playVillainAppear();
+      this.dialogSystem.show(agent, 'The Reaper comes...', 2000);
+
+      this.villain.attackTarget(agent, () => {
+        // This callback is called when villain finishes the attack
+        this.audio.playKill();
+        this.dialogSystem.show(agent, 'ELIMINATED', 1500);
+        // The actual kill request is handled by ContextMenu
+      });
     }
   }
 
@@ -205,8 +304,13 @@ export class Game {
       agent.update(deltaTime, this.agents);
     }
 
-    // Update connections between agents
-    this.connections.update(this.agents, deltaTime);
+    // Update villain
+    if (this.villain) {
+      this.villain.update(deltaTime);
+    }
+
+    // Update connections between agents (including villain attack line)
+    this.connections.update(this.agents, deltaTime, this.villain);
 
     // Update dialogs
     this.dialogSystem.update(deltaTime);
