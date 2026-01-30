@@ -1,10 +1,10 @@
-# Fishtank 🐟
+# Idle Realm 🐟
 
-**A visual process monitor for tmux sessions and Docker containers.**
+**The fishtank for your processes. Runs in Chrome.**
 
-Watch your terminal processes swim around like creatures in a fishtank. Fishtank transforms boring process lists into an ambient, interactive 2D visualization with fantasy RPG-inspired sprites.
+Watch your terminal processes swim around like creatures in an idle game. Idle Realm transforms boring process lists into an ambient, interactive 2D visualization with fantasy RPG-inspired sprites.
 
-![Fishtank Demo](https://img.shields.io/badge/status-active-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
+![Idle Realm](https://img.shields.io/badge/status-active-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 
 ## Features
 
@@ -22,8 +22,8 @@ Watch your terminal processes swim around like creatures in a fishtank. Fishtank
 
 ```bash
 # Clone the repo
-git clone https://github.com/chrisrijos/fishtank.git
-cd fishtank
+git clone https://github.com/chrisrijos/idle-realm.git
+cd idle-realm
 
 # Install dependencies
 npm install
@@ -163,4 +163,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Made with 🐟 for developers who like to watch their processes swim.*
+*The fishtank for your processes. Made with 🐟 for developers who like to watch their processes swim.*
