@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realm Fishtank</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0a0a12;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+    }
+    #game {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #status {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: #4a9;
+      font-size: 12px;
+      z-index: 100;
+    }
+    #status.disconnected {
+      color: #a44;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Connecting...</div>
+  <div id="game"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
