@@ -7,6 +7,7 @@ export class ContextMenu {
     this.container = new Container();
     this.container.visible = false;
     this.currentAgent = null;
+    this.logInterval = null;
 
     this.background = new Graphics();
     this.container.addChild(this.background);
@@ -156,6 +157,7 @@ export class ContextMenu {
     this.currentAgent = agent;
     this.container.visible = true;
     this.logPanel.visible = false;
+    if (this.logInterval) clearInterval(this.logInterval);
 
     // Position menu (keep on screen)
     const menuWidth = 280;
@@ -201,6 +203,10 @@ export class ContextMenu {
     this.container.visible = false;
     this.logPanel.visible = false;
     this.currentAgent = null;
+    if (this.logInterval) {
+      clearInterval(this.logInterval);
+      this.logInterval = null;
+    }
   }
 
   isInsideMenu(x, y) {
@@ -214,20 +220,36 @@ export class ContextMenu {
 
     this.logPanel.visible = true;
     this.logText.text = 'Loading logs...';
+    
+    // Clear any existing interval
+    if (this.logInterval) clearInterval(this.logInterval);
 
-    try {
-      const response = await fetch(`http://localhost:3001/api/logs?id=${encodeURIComponent(this.currentAgent.data.id)}&type=${this.currentAgent.data.type}`);
-      const data = await response.json();
+    const fetchLogs = async () => {
+        if (!this.container.visible || !this.logPanel.visible || !this.currentAgent) {
+            if (this.logInterval) clearInterval(this.logInterval);
+            return;
+        }
 
-      if (data.logs) {
-        const formatted = this.formatLogs(data.logs);
-        this.logText.text = formatted || '(no output)';
-      } else {
-        this.logText.text = data.error || 'Failed to load logs';
-      }
-    } catch (e) {
-      this.logText.text = `Error: ${e.message}`;
-    }
+        try {
+          const response = await fetch(`http://localhost:3001/api/logs?id=${encodeURIComponent(this.currentAgent.data.id)}&type=${this.currentAgent.data.type}`);
+          const data = await response.json();
+    
+          if (data.logs) {
+            const formatted = this.formatLogs(data.logs);
+            this.logText.text = formatted || '(no output)';
+          } else {
+            this.logText.text = data.error || 'Failed to load logs';
+          }
+        } catch (e) {
+          this.logText.text = `Error: ${e.message}`;
+        }
+    };
+
+    // Initial fetch
+    fetchLogs();
+
+    // Poll every 2 seconds
+    this.logInterval = setInterval(fetchLogs, 2000);
   }
 
   formatLogs(rawLogs) {

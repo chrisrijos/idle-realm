@@ -1,6 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 
-// The Reaper - appears when a process is killed
+// The Predator - appears when a process is killed
 export class Villain {
   constructor(worldWidth, worldHeight) {
     this.worldWidth = worldWidth;
@@ -29,62 +29,47 @@ export class Villain {
   createSprite() {
     this.sprite = new Graphics();
 
-    // Reaper body (dark hooded figure)
-    // Hood
-    this.sprite.moveTo(0, -35);
-    this.sprite.lineTo(-20, -10);
-    this.sprite.lineTo(-18, 15);
-    this.sprite.lineTo(18, 15);
-    this.sprite.lineTo(20, -10);
-    this.sprite.closePath();
-    this.sprite.fill({ color: 0x1a1a2e, alpha: 0.95 });
+    // Shark Body
+    const len = 60;
+    const h = 25;
 
-    // Hood outline
-    this.sprite.moveTo(0, -35);
-    this.sprite.lineTo(-20, -10);
-    this.sprite.lineTo(-18, 15);
-    this.sprite.lineTo(18, 15);
-    this.sprite.lineTo(20, -10);
-    this.sprite.closePath();
-    this.sprite.stroke({ width: 2, color: 0x4a0080 });
+    // Main body
+    this.sprite.ellipse(0, 0, len/2, h/2);
+    this.sprite.fill(0x607d8b); // Blue-grey
 
-    // Inner hood darkness
-    this.sprite.ellipse(0, -5, 12, 15);
+    // Top fin
+    this.sprite.moveTo(-5, -h/2);
+    this.sprite.lineTo(5, -h/2 - 15);
+    this.sprite.lineTo(15, -h/2);
+    this.sprite.fill(0x607d8b);
+
+    // Tail fin
+    this.sprite.moveTo(-len/2, 0);
+    this.sprite.lineTo(-len/2 - 15, -15);
+    this.sprite.lineTo(-len/2 - 5, 0);
+    this.sprite.lineTo(-len/2 - 15, 15);
+    this.sprite.fill(0x607d8b);
+
+    // Belly (lighter)
+    this.sprite.arc(0, 0, len/2, 0.5, Math.PI - 0.5);
+    this.sprite.fill({ color: 0xb0bec5, alpha: 0.8 });
+
+    // Eye
+    this.sprite.circle(len/3, -5, 2);
     this.sprite.fill(0x000000);
+    
+    // Gills
+    this.sprite.rect(10, -5, 2, 10);
+    this.sprite.rect(5, -5, 2, 10);
+    this.sprite.rect(0, -5, 2, 10);
+    this.sprite.fill(0x455a64);
 
-    // Glowing eyes
-    this.sprite.circle(-5, -8, 3);
-    this.sprite.circle(5, -8, 3);
-    this.sprite.fill(0xff0044);
-
-    // Eye glow
-    this.sprite.circle(-5, -8, 5);
-    this.sprite.circle(5, -8, 5);
-    this.sprite.fill({ color: 0xff0044, alpha: 0.3 });
-
-    // Scythe
-    this.sprite.moveTo(25, -25);
-    this.sprite.lineTo(25, 25);
-    this.sprite.stroke({ width: 3, color: 0x4a4a4a });
-
-    // Scythe blade
-    this.sprite.moveTo(25, -25);
-    this.sprite.quadraticCurveTo(45, -35, 45, -15);
-    this.sprite.quadraticCurveTo(45, -5, 25, -5);
-    this.sprite.fill(0x888888);
-
-    // Blade edge
-    this.sprite.moveTo(25, -25);
-    this.sprite.quadraticCurveTo(45, -35, 45, -15);
-    this.sprite.stroke({ width: 1, color: 0xcccccc });
-
-    // Wispy bottom
+    // Teeth (hidden unless attacking, but let's show a grin)
     for (let i = 0; i < 5; i++) {
-      const wx = -15 + i * 8;
-      const wy = 15 + Math.sin(i) * 3;
-      this.sprite.moveTo(wx, wy);
-      this.sprite.lineTo(wx + Math.sin(i * 0.7) * 5, wy + 15);
-      this.sprite.stroke({ width: 2, color: 0x1a1a2e, alpha: 0.7 - i * 0.1 });
+        this.sprite.moveTo(15 + i*3, 5);
+        this.sprite.lineTo(16 + i*3, 8);
+        this.sprite.lineTo(17 + i*3, 5);
+        this.sprite.fill(0xffffff);
     }
 
     this.container.addChild(this.sprite);
@@ -97,7 +82,7 @@ export class Villain {
       fontWeight: 'bold',
       dropShadow: { color: '#000000', blur: 3, distance: 1 }
     });
-    this.nameLabel = new Text({ text: 'THE REAPER', style });
+    this.nameLabel = new Text({ text: 'THE PREDATOR', style });
     this.nameLabel.anchor.set(0.5, 0);
     this.nameLabel.y = 30;
     this.container.addChild(this.nameLabel);
@@ -146,15 +131,21 @@ export class Villain {
         break;
 
       case 'moving':
-        // Glide toward target
+        // Swim fast toward target
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 30) {
-          const speed = 4;
+          const speed = 6;
           this.x += (dx / dist) * speed * deltaTime;
           this.y += (dy / dist) * speed * deltaTime;
+          
+          // Face direction
+          this.sprite.scale.x = dx > 0 ? 1 : -1;
+          this.nameLabel.scale.x = dx > 0 ? 1 : -1; // Keep text readable? No, this flips text.
+          if (dx < 0) this.nameLabel.scale.x = -1; // Actually we want to flip the sprite not container if possible, but here we flip sprite via scale.
+          
         } else {
           this.phase = 'attacking';
           this.phaseTimer = 0;
@@ -162,12 +153,12 @@ export class Villain {
         break;
 
       case 'attacking':
-        // Slash effect and spawn death particles
+        // Chomp animation
         if (this.phaseTimer < 20) {
-          // Scythe swing animation
-          this.sprite.rotation = Math.sin(this.phaseTimer * 0.5) * 0.5;
+          // Open/Close mouth shake
+           this.sprite.rotation = Math.sin(this.phaseTimer * 2) * 0.2;
         } else if (this.phaseTimer === 20 || (this.phaseTimer > 20 && this.phaseTimer < 22)) {
-          // Spawn death particles at target location
+          // Spawn bubbles/debris
           if (this.targetAgent && this.deathParticles.length < 30) {
             this.spawnDeathParticles(this.targetAgent.x, this.targetAgent.y);
           }
@@ -183,8 +174,8 @@ export class Villain {
         break;
 
       case 'vanishing':
-        // Fade out and move away
-        this.x += 3 * deltaTime;
+        // Swim away
+        this.x += 5 * deltaTime;
         this.container.alpha = Math.max(0, 1 - this.phaseTimer / 40);
 
         if (this.phaseTimer > 40) {
@@ -193,13 +184,14 @@ export class Villain {
           this.container.visible = false;
           this.targetAgent = null;
           this.sprite.rotation = 0;
+          this.sprite.scale.x = 1;
         }
         break;
     }
 
     // Update position with bob
     this.container.x = this.x;
-    this.container.y = this.y + Math.sin(this.bobOffset) * 5;
+    this.container.y = this.y + Math.sin(this.bobOffset * 2) * 3;
 
     // Update death particles
     this.updateParticles(deltaTime);
@@ -211,34 +203,23 @@ export class Villain {
 
       // Random particle type
       const type = Math.random();
-      if (type < 0.3) {
-        // Skull
-        particle.circle(0, 0, 4);
-        particle.fill(0xffffff);
-        particle.circle(-1.5, -1, 1);
-        particle.circle(1.5, -1, 1);
-        particle.fill(0x000000);
-        particle.rect(-1.5, 2, 3, 2);
-        particle.fill(0x000000);
-      } else if (type < 0.6) {
-        // Soul wisp
+      if (type < 0.5) {
+        // Red Bubbles (Blood/Oil)
         particle.circle(0, 0, 3);
-        particle.fill({ color: 0x88ffff, alpha: 0.7 });
-        particle.circle(0, -2, 2);
-        particle.fill({ color: 0xaaffff, alpha: 0.5 });
+        particle.fill({ color: 0xff4444, alpha: 0.8 });
+        particle.circle(-1, -1, 1);
+        particle.fill({ color: 0xffaaaa, alpha: 0.5 });
       } else {
-        // Dark shard
-        particle.moveTo(0, -5);
-        particle.lineTo(3, 0);
-        particle.lineTo(0, 5);
-        particle.lineTo(-3, 0);
-        particle.closePath();
-        particle.fill({ color: 0x4a0080, alpha: 0.8 });
+        // Debris
+        particle.rect(-2, -2, 4, 4);
+        particle.fill({ color: 0xcccccc, alpha: 0.8 });
       }
 
-      // Position relative to parent container (world coords stored separately)
-      particle.x = x;
-      particle.y = y;
+      // Position relative to parent container
+      // Since container moves, we need to offset relative to it, or just use world coords if we weren't adding to this.container.
+      // But we ARE adding to this.container. So we need local coords.
+      particle.x = x - this.container.x;
+      particle.y = y - this.container.y;
 
       this.particleContainer.addChild(particle);
 
@@ -279,7 +260,7 @@ export class Villain {
     return {
       from: { x: this.x, y: this.y },
       to: { x: this.targetAgent.x, y: this.targetAgent.y },
-      intensity: Math.sin(this.phaseTimer * 0.3) * 0.5 + 0.5
+      intensity: Math.sin(this.phaseTimer * 0.8) * 0.5 + 0.5
     };
   }
 }

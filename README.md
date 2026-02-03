@@ -1,25 +1,24 @@
-# Idle Realm 🐟
+# The Idle Reef 🪸
 
-**The fishtank for your processes. Runs in Chrome.**
+**The aquarium for your processes. Runs in Chrome.**
 
-Watch your terminal processes swim around like creatures in an idle game. Idle Realm transforms boring process lists into an ambient, interactive 2D visualization with fantasy RPG-inspired sprites.
+Watch your terminal processes swim around like marine life in an idle game. The Idle Reef transforms boring process lists into an ambient, interactive 2D underwater visualization.
 
-![Idle Realm](https://img.shields.io/badge/status-active-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
+![The Idle Reef](https://img.shields.io/badge/status-active-blue) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 
 <p align="center">
-  <img src="screenshots/idle-realm-main.png" alt="Idle Realm - Main View" width="270"/>
-  <img src="screenshots/idle-realm-menu.png" alt="Idle Realm - Context Menu" width="270"/>
+  <img src="screenshots/idle-reef-main.png" alt="The Idle Reef - Main View" width="550"/>
 </p>
 
 ## Features
 
 - **Real-time visualization** of tmux sessions, panes, and Docker containers
-- **Distinct sprite types**: Wizards (tmux sessions), Familiars (panes), Containers (Docker)
-- **Click-to-interact**: View logs, kill processes, see detailed stats
-- **The Reaper**: Dramatic villain animation when killing processes
+- **Distinct marine life**: Jellyfish (sessions), Fish (panes), Whales (containers)
+- **Click-to-interact**: View real-time logs, kill processes, see detailed stats
+- **The Predator**: Dramatic shark animation when killing processes
 - **Health monitoring**: Visual indicators for container health status
-- **Stale detection**: Frozen animation with ice crystals for inactive processes
-- **Connection lines**: See relationships between sessions and panes
+- **Stale detection**: Frozen bubble trap animation for inactive processes
+- **Ambient Experience**: Seaweed, bubbles, and deep ocean vibes
 - **4 Zelda-inspired soundtracks**: Jabu-Jabu, Lost Woods, Temple of Time, Fairy Fountain
 - **Full audio control**: Toggle music, switch tracks, or mute all sounds
 - **Sound effects**: Audio cues for spawns, kills, errors, and state changes
@@ -62,27 +61,27 @@ open http://localhost:3000
 
 ### Context Menu Options
 
-- **View Logs**: See last 30 lines of process output
+- **View Logs**: See live-updating process output
 - **Kill Process**: Stop container or kill tmux session/pane
 - **Close**: Dismiss the menu
 
-### Sprite Types
+### Marine Life Types
 
 | Sprite | Process Type | Color |
 |--------|--------------|-------|
-| 🧙 Wizard | tmux session | Purple |
-| ✨ Familiar | tmux pane | Cyan |
-| 📦 Container | Docker (running) | Green |
-| 🪨 Stone | Docker (stopped) | Gray |
-| ❄️ Frozen | Stale/inactive | Blue tint |
+| 🎐 Jellyfish | tmux session | Lavender (Glowing) |
+| 🐠 Fish | tmux pane | Orange (Clownfish) |
+| 🐋 Whale | Docker (running) | Blue/Green |
+| 🌫️ Gray Whale | Docker (stopped) | Gray |
+| 🫧 Bubble Trap | Stale/inactive | Frozen Blue |
 
 ### Visual Indicators
 
 - **Green dot**: Healthy container
 - **Red dot**: Unhealthy container
-- **Port dots**: Exposed ports (bottom of container)
+- **Port dots**: Exposed ports (bottom of whale)
 - **Ice ring**: Stale/frozen process
-- **Connection lines**: Parent-child relationships
+- **Bubbles**: Ambient background effects
 
 ## Configuration
 
@@ -172,4 +171,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*The fishtank for your processes. Made with 🐟 for developers who like to watch their processes swim.*
+*The aquarium for your processes. Made with 🐟 for developers who like to watch their processes swim.*

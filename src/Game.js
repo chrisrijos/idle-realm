@@ -1,11 +1,11 @@
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import { Agent } from './Agent.js';
-import { World } from './World.js';
-import { Dialog } from './Dialog.js';
-import { Connections } from './Connections.js';
-import { ContextMenu } from './ContextMenu.js';
-import { AudioManager } from './Audio.js';
-import { Villain } from './Villain.js';
+import { Agent } from './entities/Agent.js';
+import { World } from './visuals/World.js';
+import { Dialog } from './ui/Dialog.js';
+import { Connections } from './visuals/Connections.js';
+import { ContextMenu } from './ui/ContextMenu.js';
+import { AudioManager } from './engine/Audio.js';
+import { Villain } from './entities/Villain.js';
 
 export class Game {
   constructor(app) {
@@ -55,7 +55,7 @@ export class Game {
       fill: '#6a8',
       fontWeight: 'bold'
     });
-    const title = new Text({ text: 'THE IDLE REALM', style: titleStyle });
+    const title = new Text({ text: 'THE IDLE REEF', style: titleStyle });
     title.x = this.app.screen.width / 2 - title.width / 2;
     title.y = 10;
     this.app.stage.addChild(title);
@@ -218,6 +218,7 @@ export class Game {
     for (const [id, agent] of this.agents) {
       if (!seenIds.has(id)) {
         this.agentContainer.removeChild(agent.container);
+        agent.destroy();
         this.agents.delete(id);
         this.audio.playKill();
       }

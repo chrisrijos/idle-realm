@@ -2,13 +2,13 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 
 // Sprite colors by type
 const COLORS = {
-  'tmux-session': { body: 0x7b68ee, accent: 0x9370db, glow: 0xb19cd9 }, // Purple wizard
-  'tmux-pane': { body: 0x48d1cc, accent: 0x40e0d0, glow: 0x7fffd4 },    // Cyan familiar
-  'docker-running': { body: 0x2e8b57, accent: 0x3cb371, glow: 0x98fb98 }, // Green container
-  'docker-stopped': { body: 0x4a4a5a, accent: 0x696969, glow: 0x808080 }, // Gray container
-  'docker-healthy': { body: 0x228b22, accent: 0x32cd32, glow: 0x7cfc00 }, // Bright green
-  'docker-unhealthy': { body: 0xcd5c5c, accent: 0xf08080, glow: 0xff6b6b }, // Red
-  'frozen': { body: 0x4a6a8a, accent: 0x6a8aaa, glow: 0x88ccff }         // Blue frozen
+  'tmux-session': { body: 0xe6e6fa, accent: 0xd8bfd8, glow: 0xff69b4 }, // Jellyfish (lavender)
+  'tmux-pane': { body: 0xff7f50, accent: 0xff6347, glow: 0xffa07a },    // Clownfish (orange)
+  'docker-running': { body: 0x4682b4, accent: 0x5f9ea0, glow: 0x87ceeb }, // Whale (steel blue)
+  'docker-stopped': { body: 0x708090, accent: 0x2f4f4f, glow: 0xa9a9a9 }, // Gray whale
+  'docker-healthy': { body: 0x2e8b57, accent: 0x3cb371, glow: 0x98fb98 }, // Green whale
+  'docker-unhealthy': { body: 0xcd5c5c, accent: 0xf08080, glow: 0xff6b6b }, // Red whale
+  'frozen': { body: 0xaaddff, accent: 0x88ccff, glow: 0xe0ffff }         // Frozen blue
 };
 
 export class Agent {
@@ -39,6 +39,7 @@ export class Agent {
     // Animation
     this.bobOffset = Math.random() * Math.PI * 2;
     this.bobSpeed = 0.05 + Math.random() * 0.03;
+    this.tailAngle = 0;
     this.healthPulse = 0;
 
     // Stale/frozen detection
@@ -58,134 +59,83 @@ export class Agent {
     this.sprite = new Graphics();
 
     if (this.data.type === 'docker-container') {
-      this.drawDockerSprite(colors, size);
+      this.drawWhaleSprite(colors, size);
     } else if (this.data.type === 'tmux-session') {
-      this.drawWizardSprite(colors, size);
+      this.drawJellyfishSprite(colors, size);
     } else if (this.data.type === 'tmux-pane') {
-      this.drawFamiliarSprite(colors, size);
+      this.drawFishSprite(colors, size);
     }
 
     this.container.addChild(this.sprite);
   }
 
-  drawDockerSprite(colors, size) {
-    const w = size * 1.8;
-    const h = size * 1.2;
+  drawWhaleSprite(colors, size) {
+    const w = size * 2.5;
+    const h = size * 1.5;
 
-    // Container body (box shape)
-    this.sprite.roundRect(-w/2, -h/2, w, h, 4);
+    // Body (ellipse)
+    this.sprite.ellipse(0, 0, w/2, h/2);
     this.sprite.fill(colors.body);
 
-    // Container ridges (like shipping container)
-    for (let i = 0; i < 3; i++) {
-      const rx = -w/2 + 4 + i * (w - 8) / 3;
-      this.sprite.rect(rx, -h/2 + 3, 2, h - 6);
-      this.sprite.fill(colors.accent);
-    }
-
-    // Top lid
-    this.sprite.roundRect(-w/2 - 2, -h/2 - 4, w + 4, 6, 2);
+    // Tail
+    this.sprite.moveTo(-w/2, 0);
+    this.sprite.lineTo(-w/2 - size, -size/2);
+    this.sprite.lineTo(-w/2 - size, size/2);
     this.sprite.fill(colors.accent);
 
-    // Docker whale logo (simplified)
-    this.sprite.rect(-6, -2, 4, 3);
-    this.sprite.rect(-1, -2, 4, 3);
-    this.sprite.rect(4, -2, 4, 3);
-    this.sprite.rect(-6, 2, 4, 3);
-    this.sprite.rect(-1, 2, 4, 3);
-    this.sprite.rect(4, 2, 4, 3);
+    // Eye
+    this.sprite.circle(w/4, -h/6, 2);
     this.sprite.fill(0xffffff);
+    this.sprite.circle(w/4, -h/6, 1);
+    this.sprite.fill(0x000000);
 
-    // Health indicator (heartbeat)
-    if (this.data.health === 'healthy') {
-      this.sprite.circle(w/2 - 4, -h/2 + 4, 3);
-      this.sprite.fill(0x00ff00);
-    } else if (this.data.health === 'unhealthy') {
-      this.sprite.circle(w/2 - 4, -h/2 + 4, 3);
-      this.sprite.fill(0xff0000);
-    }
+    // Belly
+    this.sprite.arc(0, 0, w/2, 0.5, Math.PI - 0.5);
+    this.sprite.fill({ color: 0xffffff, alpha: 0.3 });
 
-    // Ports indicator (small dots at bottom)
-    if (this.data.ports && this.data.ports.length > 0) {
-      const portCount = Math.min(this.data.ports.length, 4);
-      for (let i = 0; i < portCount; i++) {
-        const px = -w/4 + i * (w/2) / (portCount);
-        this.sprite.circle(px, h/2 + 6, 2);
-        this.sprite.fill(0x88ff88);
-      }
+    // Blowhole spray (if running)
+    if (this.data.running) {
+        this.sprite.circle(0, -h/2 - 2, 2);
+        this.sprite.fill({ color: 0xffffff, alpha: 0.5 });
     }
   }
 
-  drawWizardSprite(colors, size) {
-    // Body (round)
-    this.sprite.circle(0, 0, size);
+  drawJellyfishSprite(colors, size) {
+    // Dome
+    this.sprite.arc(0, 0, size, Math.PI, 0);
+    this.sprite.lineTo(size, size/2);
+    this.sprite.lineTo(-size, size/2);
     this.sprite.fill(colors.body);
 
-    // Inner glow
-    this.sprite.circle(0, 0, size * 0.7);
-    this.sprite.fill(colors.accent);
-
-    // Eyes
-    const eyeOffset = size * 0.3;
-    const eyeSize = size * 0.15;
-    this.sprite.circle(-eyeOffset, -size * 0.2, eyeSize);
-    this.sprite.circle(eyeOffset, -size * 0.2, eyeSize);
-    this.sprite.fill(0xffffff);
-
-    // Pupils
-    this.sprite.circle(-eyeOffset + 1, -size * 0.2, eyeSize * 0.5);
-    this.sprite.circle(eyeOffset + 1, -size * 0.2, eyeSize * 0.5);
-    this.sprite.fill(0x000000);
-
-    // Wizard hat
-    this.sprite.moveTo(-size * 0.7, -size * 0.7);
-    this.sprite.lineTo(0, -size * 1.6);
-    this.sprite.lineTo(size * 0.7, -size * 0.7);
-    this.sprite.fill(colors.body);
-
-    // Hat band
-    this.sprite.rect(-size * 0.5, -size * 0.85, size, 4);
-    this.sprite.fill(colors.glow);
-
-    // Star on hat
-    this.sprite.star(0, -size * 1.2, 5, 3, 1.5);
-    this.sprite.fill(0xffff88);
-
-    // Windows count badge
-    if (this.data.windowCount > 1) {
-      this.sprite.circle(size * 0.7, -size * 0.5, 6);
-      this.sprite.fill(0x333355);
-      this.sprite.circle(size * 0.7, -size * 0.5, 5);
-      this.sprite.fill(colors.glow);
+    // Tentacles
+    for (let i = 0; i < 3; i++) {
+       this.sprite.rect(-size/2 + i * (size/2), size/2, 2, size);
+       this.sprite.fill(colors.accent);
     }
+    
+    // Glow
+    this.sprite.circle(0, 0, size * 0.5);
+    this.sprite.fill({ color: colors.glow, alpha: 0.5 });
   }
 
-  drawFamiliarSprite(colors, size) {
-    // Small floating orb
-    this.sprite.circle(0, 0, size);
+  drawFishSprite(colors, size) {
+    // Body
+    this.sprite.ellipse(0, 0, size * 1.5, size * 0.8);
     this.sprite.fill(colors.body);
 
-    this.sprite.circle(0, 0, size * 0.6);
+    // Tail
+    this.sprite.moveTo(-size * 1.5, 0);
+    this.sprite.lineTo(-size * 2, -size/2);
+    this.sprite.lineTo(-size * 2, size/2);
     this.sprite.fill(colors.accent);
 
-    // Tiny eyes
-    this.sprite.circle(-size * 0.25, -size * 0.1, 2);
-    this.sprite.circle(size * 0.25, -size * 0.1, 2);
+    // Stripe
+    this.sprite.rect(-size/2, -size * 0.8, size/2, size * 1.6);
     this.sprite.fill(0xffffff);
 
-    this.sprite.circle(-size * 0.25 + 0.5, -size * 0.1, 1);
-    this.sprite.circle(size * 0.25 + 0.5, -size * 0.1, 1);
+    // Eye
+    this.sprite.circle(size * 0.8, -size * 0.3, 2);
     this.sprite.fill(0x000000);
-
-    // Sparkle trail
-    for (let i = 0; i < 3; i++) {
-      const angle = this.bobOffset + i * 0.8;
-      const dist = size + 4 + i * 3;
-      const sx = Math.cos(angle) * dist * 0.5;
-      const sy = Math.sin(angle) * dist * 0.3 + size * 0.5;
-      this.sprite.circle(sx, sy, 1.5 - i * 0.3);
-      this.sprite.fill({ color: colors.glow, alpha: 0.7 - i * 0.2 });
-    }
   }
 
   createLabel() {
@@ -258,26 +208,14 @@ export class Agent {
 
     this.frozenOverlay.visible = true;
 
-    // Ice effect
-    if (this.data.type === 'docker-container') {
-      const w = size * 1.8;
-      const h = size * 1.2;
-      this.frozenOverlay.roundRect(-w/2 - 4, -h/2 - 8, w + 8, h + 12, 6);
-      this.frozenOverlay.stroke({ width: 2, color: 0x88ccff, alpha: 0.6 });
-    } else {
-      this.frozenOverlay.circle(0, 0, size + 4);
-      this.frozenOverlay.stroke({ width: 2, color: 0x88ccff, alpha: 0.6 });
-    }
-
-    // Snowflakes
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2 + this.bobOffset;
-      const dist = size + 10 + Math.sin(this.bobOffset * 2 + i) * 3;
-      const px = Math.cos(angle) * dist;
-      const py = Math.sin(angle) * dist;
-      this.frozenOverlay.circle(px, py, 2);
-      this.frozenOverlay.fill({ color: 0xaaddff, alpha: 0.7 });
-    }
+    // Bubble Trap Effect
+    this.frozenOverlay.circle(0, 0, size * 2);
+    this.frozenOverlay.stroke({ width: 1, color: 0xffffff, alpha: 0.8 });
+    this.frozenOverlay.fill({ color: 0xffffff, alpha: 0.2 });
+    
+    // Bubble highlight
+    this.frozenOverlay.arc(-size/2, -size/2, size/2, 3, 4.5);
+    this.frozenOverlay.stroke({ width: 2, color: 0xffffff, alpha: 0.6 });
 
     if (!this.frozenText) {
       const style = new TextStyle({
@@ -288,7 +226,7 @@ export class Agent {
       });
       this.frozenText = new Text({ text: 'STALE', style });
       this.frozenText.anchor.set(0.5, 0.5);
-      this.frozenText.y = -size - 18;
+      this.frozenText.y = -size * 2 - 10;
       this.container.addChild(this.frozenText);
     }
     this.frozenText.visible = true;
@@ -340,6 +278,10 @@ export class Agent {
     }
   }
 
+  destroy() {
+    this.container.destroy({ children: true });
+  }
+
   update(deltaTime, allAgents) {
     const timeSinceActivity = Date.now() - this.lastActivity;
     const wasFrozen = this.isFrozen;
@@ -381,15 +323,17 @@ export class Agent {
       this.vy *= 0.9;
     }
 
-    // Avoid others
-    for (const other of allAgents.values()) {
-      if (other === this) continue;
-      const ox = other.x - this.x;
-      const oy = other.y - this.y;
-      const od = Math.sqrt(ox * ox + oy * oy);
-      if (od < 45 && od > 0) {
-        this.vx -= (ox / od) * 0.3;
-        this.vy -= (oy / od) * 0.3;
+    // Avoid others - Throttled check for performance
+    if (Math.random() < 0.2) { // Only check 20% of frames
+      for (const other of allAgents.values()) {
+        if (other === this) continue;
+        const ox = other.x - this.x;
+        const oy = other.y - this.y;
+        const od = Math.sqrt(ox * ox + oy * oy);
+        if (od < 45 && od > 0) {
+          this.vx -= (ox / od) * 0.3;
+          this.vy -= (oy / od) * 0.3;
+        }
       }
     }
 
@@ -415,6 +359,12 @@ export class Agent {
     this.container.x = this.x;
     this.container.y = this.y + bob;
     this.sprite.scale.x = this.direction;
+
+    // Tail wag for fish/whales
+    if (this.data.type !== 'tmux-session') {
+       // Simple skew to simulate tail movement
+       this.sprite.skew.y = Math.sin(this.bobOffset * 4) * 0.1;
+    }
 
     // Alpha effects
     if (this.data.active || (this.data.cpu && this.data.cpu > 10)) {
